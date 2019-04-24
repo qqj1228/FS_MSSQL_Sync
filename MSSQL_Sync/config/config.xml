@@ -1,13 +1,10 @@
 <Config>
   <Main>
-    <Interval>60</Interval>
-    <NewTestLine>1</NewTestLine>
-  </Main>
-  <DB>
+    <Interval>30</Interval>
     <SyncConfig>sync.xml</SyncConfig>
-    <MESDBStartIndex>5</MESDBStartIndex>
+    <MESDBStartIndex>6</MESDBStartIndex>
     <IDColList>ID,SELFID,PK_DMS_AUTO_INDEX_EmissionTotal,PK_DMS_AUTO_INDEX_DieselTotal</IDColList>
-  </DB>
+  </Main>
   <DBInfo>
     <DB_0>
       <IP>127.0.0.1</IP>

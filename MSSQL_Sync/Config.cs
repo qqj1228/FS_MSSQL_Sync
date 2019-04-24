@@ -8,10 +8,6 @@ namespace MSSQL_Sync {
     public class Config {
         public struct MainConfig {
             public int Interval { get; set; } // 单位秒
-            public int NewTestLine { get; set; } // 是否用于新线
-        }
-
-        public struct DBMainConfig {
             public string SyncConfig { get; set; }
             public int MESDBStartIndex { get; set; }
             public List<string> IDColList;
@@ -28,7 +24,6 @@ namespace MSSQL_Sync {
         }
 
         public MainConfig Main;
-        public DBMainConfig DB;
         public List<DBInfoConfig> DBInfoList;
         readonly Logger Log;
         string ConfigFile { get; set; }
@@ -62,21 +57,15 @@ namespace MSSQL_Sync {
                             if (item.Name == "Interval") {
                                 int.TryParse(item.InnerText, out int result);
                                 Main.Interval = result;
-                            } else if (item.Name == "NewTestLine") {
-                                int.TryParse(item.InnerText, out int result);
-                                Main.NewTestLine = result;
-                            }
-                        }
-                    } else if (node.Name == "DB") {
-                        foreach (XmlNode item in xnlChildren) {
-                            if (item.Name == "SyncConfig") {
-                                DB.SyncConfig = item.InnerText;
+                            } else if (item.Name == "SyncConfig") {
+                                Main.SyncConfig = item.InnerText;
                             } else if (item.Name == "MESDBStartIndex") {
                                 int.TryParse(item.InnerText, out int result);
-                                DB.MESDBStartIndex = result;
+                                Main.MESDBStartIndex = result;
                             } else if (item.Name == "IDColList") {
-                                DB.IDColList = new List<string>(item.InnerText.Split(','));
+                                Main.IDColList = new List<string>(item.InnerText.Split(','));
                             }
+
                         }
                     } else if (node.Name == "DBInfo") {
                         DBInfoConfig TempExDB = new DBInfoConfig();
@@ -151,7 +140,7 @@ namespace MSSQL_Sync {
         void LoadSyncConfig() {
             try {
                 XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load("./config/" + this.DB.SyncConfig);
+                xmlDoc.Load("./config/" + this.Main.SyncConfig);
                 XmlNode xnRoot = xmlDoc.SelectSingleNode("Sync");
                 XmlNodeList xnl = xnRoot.ChildNodes;
 

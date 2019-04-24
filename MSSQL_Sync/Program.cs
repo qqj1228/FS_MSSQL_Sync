@@ -60,7 +60,7 @@ namespace MSSQL_Sync {
             HashSet<string> VIN_ABS = new HashSet<string>();
             // 生成新数据记录List
             List<Dictionary<string, string>> NewList = new List<Dictionary<string, string>>();
-            for (int i = 0; i < cfg.DB.MESDBStartIndex; i++) {
+            for (int i = 0; i < cfg.Main.MESDBStartIndex; i++) {
                 int len = cfg.DBInfoList[i].TableList.Count;
                 if (cfg.DBInfoList[i].LastIDList.Count == len) {
                     string DBName = cfg.DBInfoList[i].Name;
@@ -83,7 +83,7 @@ namespace MSSQL_Sync {
                                 for (int n = 0; n < rowNum; n++) {
                                     Dictionary<string, string> dic = new Dictionary<string, string>();
                                     for (int k = 0; k < colNew.Length; k++) {
-                                        if (!cfg.DB.IDColList.Contains(colNew[k])) {
+                                        if (!cfg.Main.IDColList.Contains(colNew[k])) {
                                             dic.Add(DBName + "." + TableName + "." + colNew[k], rs[n, k]);
                                         } else {
                                             IDIndex = k;
@@ -248,7 +248,7 @@ namespace MSSQL_Sync {
             List<InsertRecord> InsertList = new List<InsertRecord>();
             // 生成新数据记录List
             List<Dictionary<string, string>> NewList = new List<Dictionary<string, string>>();
-            for (int i = cfg.DB.MESDBStartIndex; i < cfg.DBInfoList.Count; i++) {
+            for (int i = cfg.Main.MESDBStartIndex; i < cfg.DBInfoList.Count; i++) {
                 List<int> LastIDList = new List<int>();
                 int len = cfg.DBInfoList[i].TableList.Count;
                 if (cfg.DBInfoList[i].LastIDList.Count == len) {
@@ -270,7 +270,7 @@ namespace MSSQL_Sync {
                                 for (int n = 0; n < rowNum; n++) {
                                     Dictionary<string, string> dic = new Dictionary<string, string>();
                                     for (int k = 0; k < colNew.Length; k++) {
-                                        if (!cfg.DB.IDColList.Contains(colNew[k])) {
+                                        if (!cfg.Main.IDColList.Contains(colNew[k])) {
                                             dic.Add(DBName + "." + TableName + "." + colNew[k], rs[n, k]);
                                         } else {
                                             IDIndex = k;
@@ -431,7 +431,7 @@ namespace MSSQL_Sync {
         /// <param name="LastIDContainList">数据库中包含LastIDList的容器List</param>
         static void GetNLLastID(out List<List<int>> LastIDContainList) {
             LastIDContainList = new List<List<int>>();
-            for (int i = 0; i < cfg.DB.MESDBStartIndex; i++) {
+            for (int i = 0; i < cfg.Main.MESDBStartIndex; i++) {
                 List<int> LastIDList = new List<int>();
                 int len = cfg.DBInfoList[i].TableList.Count;
                 if (cfg.DBInfoList[i].LastIDList.Count == len) {
@@ -445,7 +445,7 @@ namespace MSSQL_Sync {
                             string[] col = db.GetTableColumns(TableName, DBName);
                             if (rowNum > 0) {
                                 for (int k = 0; k < col.Length; k++) {
-                                    if (cfg.DB.IDColList.Contains(col[k])) {
+                                    if (cfg.Main.IDColList.Contains(col[k])) {
                                         int.TryParse(rs[rowNum - 1, k], out int ID);
                                         LastID = ID;
                                         break;
@@ -465,7 +465,7 @@ namespace MSSQL_Sync {
         /// </summary>
         /// <param name="LastIDContainList">数据库中包含LastIDList的容器List</param>
         static void GetMESLastID(List<List<int>> LastIDContainList) {
-            for (int i = cfg.DB.MESDBStartIndex; i < cfg.DBInfoList.Count; i++) {
+            for (int i = cfg.Main.MESDBStartIndex; i < cfg.DBInfoList.Count; i++) {
                 List<int> LastIDList = new List<int>();
                 int len = cfg.DBInfoList[i].TableList.Count;
                 if (cfg.DBInfoList[i].LastIDList.Count == len) {
@@ -485,7 +485,7 @@ namespace MSSQL_Sync {
                             string[] col = db.GetTableColumns(TableName, DBName);
                             if (rowNum > 0) {
                                 for (int k = 0; k < col.Length; k++) {
-                                    if (cfg.DB.IDColList.Contains(col[k])) {
+                                    if (cfg.Main.IDColList.Contains(col[k])) {
                                         int.TryParse(rs[rowNum - 1, k], out int ID);
                                         LastID = ID;
                                         break;
