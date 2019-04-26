@@ -51,6 +51,7 @@ namespace MSSQL_Sync {
                     str += "\n";
                 }
                 Console.WriteLine(str);
+                sqlConn.Close();
             }
         }
 
@@ -75,10 +76,7 @@ namespace MSSQL_Sync {
                             }
                         }
                     }
-                    //foreach (var item in tableName) {
-                    //    Console.WriteLine(item);
-                    //}
-                    //Console.WriteLine();
+                    sqlConn.Close();
                     return tableName;
                 }
             } catch (Exception e) {
@@ -113,10 +111,7 @@ namespace MSSQL_Sync {
                             }
                         }
                     }
-                    //foreach (var item in tableName) {
-                    //    Console.WriteLine(item);
-                    //}
-                    //Console.WriteLine();
+                    sqlConn.Close();
                     return ColumnName;
                 }
             } catch (Exception e) {
@@ -137,12 +132,15 @@ namespace MSSQL_Sync {
                     SqlCommand sqlCmd = new SqlCommand(strSQL, sqlConn);
                     sqlConn.Open();
                     count = (int)sqlCmd.ExecuteScalar();
+                    sqlConn.Close();
                 }
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ERROR: " + e.Message);
+                //Console.WriteLine("ERROR: " + strSQL);
                 Console.ResetColor();
                 log.TraceError(e.Message);
+                //log.TraceError(strSQL);
             }
             return count;
         }
@@ -192,6 +190,7 @@ namespace MSSQL_Sync {
                         SqlCommand sqlCmd = new SqlCommand(strSQL, sqlConn);
                         iRet += sqlCmd.ExecuteNonQuery();
                     }
+                    sqlConn.Close();
                 }
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -223,6 +222,7 @@ namespace MSSQL_Sync {
                         SqlCommand sqlCmd = new SqlCommand(strSQL, sqlConn);
                         iRet += sqlCmd.ExecuteNonQuery();
                     }
+                    sqlConn.Close();
                 }
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -257,6 +257,7 @@ namespace MSSQL_Sync {
                     log.TraceInfo("SQL: " + strSQL);
                     SqlCommand sqlCmd = new SqlCommand(strSQL, sqlConn);
                     iRet = sqlCmd.ExecuteNonQuery();
+                    sqlConn.Close();
                 }
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -285,6 +286,7 @@ namespace MSSQL_Sync {
                     log.TraceInfo("SQL: " + strSQL);
                     SqlCommand sqlCmd = new SqlCommand(strSQL, sqlConn);
                     iRet = sqlCmd.ExecuteNonQuery();
+                    sqlConn.Close();
                 }
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -307,6 +309,7 @@ namespace MSSQL_Sync {
                         SqlCommand sqlCmd = new SqlCommand(strSQL, sqlConn);
                         iRet += sqlCmd.ExecuteNonQuery();
                     }
+                    sqlConn.Close();
                 }
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -340,6 +343,7 @@ namespace MSSQL_Sync {
                         }
                         rowList.Add(items);
                     }
+                    sqlConn.Close();
                 }
                 records = new string[rowList.Count, count];
                 for (int i = 0; i < rowList.Count; i++) {

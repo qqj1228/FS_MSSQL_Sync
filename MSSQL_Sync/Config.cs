@@ -11,6 +11,8 @@ namespace MSSQL_Sync {
             public string SyncConfig { get; set; }
             public int MESDBStartIndex { get; set; }
             public List<string> IDColList;
+            public List<string> IntColList;
+            public List<string> ResultColList;
         }
 
         public struct DBInfoConfig {
@@ -27,14 +29,16 @@ namespace MSSQL_Sync {
         public List<DBInfoConfig> DBInfoList;
         readonly Logger Log;
         string ConfigFile { get; set; }
+        string SyncFile { get; set; }
         public Dictionary<string, string> SyncDicMES, SyncDicNL;
 
-        public Config(Logger Log, string strConfigFile = "./config/config.xml") {
+        public Config(Logger Log, string strConfigFile = "./config/config.xml", string strSyncFile = "./config/sync.xml") {
             this.Log = Log;
             this.DBInfoList = new List<DBInfoConfig>();
             this.SyncDicMES = new Dictionary<string, string>();
             this.SyncDicNL = new Dictionary<string, string>();
             this.ConfigFile = strConfigFile;
+            this.SyncFile = strSyncFile;
             LoadConfig();
             LoadSyncConfig();
         }
@@ -64,6 +68,10 @@ namespace MSSQL_Sync {
                                 Main.MESDBStartIndex = result;
                             } else if (item.Name == "IDColList") {
                                 Main.IDColList = new List<string>(item.InnerText.Split(','));
+                            } else if (item.Name == "IntColList") {
+                                Main.IntColList = new List<string>(item.InnerText.Split(','));
+                            } else if (item.Name == "ResultColList") {
+                                Main.ResultColList = new List<string>(item.InnerText.Split(','));
                             }
 
                         }
@@ -140,7 +148,7 @@ namespace MSSQL_Sync {
         void LoadSyncConfig() {
             try {
                 XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load("./config/" + this.Main.SyncConfig);
+                xmlDoc.Load(this.SyncFile);
                 XmlNode xnRoot = xmlDoc.SelectSingleNode("Sync");
                 XmlNodeList xnl = xnRoot.ChildNodes;
 

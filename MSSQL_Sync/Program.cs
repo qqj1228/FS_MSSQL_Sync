@@ -1,11 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Timers;
 using static MSSQL_Sync.Config;
 
 namespace MSSQL_Sync {
+    // 获取文件版本类
+    public class MainFileVersion {
+        public Version AssemblyVersion {
+            get { return ((Assembly.GetEntryAssembly()).GetName()).Version; }
+        }
+
+        public Version AssemblyFileVersion {
+            get { return new Version(FileVersionInfo.GetVersionInfo(Assembly.GetEntryAssembly().Location).FileVersion); }
+        }
+
+        public string AssemblyInformationalVersion {
+            get { return FileVersionInfo.GetVersionInfo(Assembly.GetEntryAssembly().Location).ProductVersion; }
+        }
+    }
+
     class Program {
         public struct InsertRecord {
             public string DBName { get; set; }
@@ -16,14 +33,20 @@ namespace MSSQL_Sync {
         static Logger log;
         static Config cfg;
         static Model db;
+        static MainFileVersion fileVer;
+
+        public static bool CanDO { get; set; }
 
         static void Main(string[] args) {
             Console.WriteLine("Application started, input \"exit\" to close this application");
             log = new Logger("./log", EnumLogLevel.LogLevelAll, true, 100);
             cfg = new Config(log);
             db = new Model(cfg, log);
+            fileVer = new MainFileVersion();
+            CanDO = true;
             Timer timer = new Timer(cfg.Main.Interval * 1000);
             timer.Elapsed += TimerJob;
+            SyncDB();
             timer.Enabled = true;
 
             string line = "";
@@ -35,11 +58,17 @@ namespace MSSQL_Sync {
         }
 
         static void TimerJob(object sender, ElapsedEventArgs e) {
-            Console.WriteLine("Start to sync database");
-            SyncDB();
+            if (CanDO) {
+                CanDO = false;
+                SyncDB();
+                CanDO = true;
+            }
         }
 
         static void SyncDB() {
+            Console.WriteLine("{0} - [{1}] Start to sync database", DateTime.Now.ToLocalTime().ToString(), fileVer.AssemblyVersion.ToString());
+            log.TraceInfo("Start to sync database");
+            log.TraceInfo("Version: " + fileVer.AssemblyVersion.ToString());
             List<InsertRecord> InsertListFromNL = GetNewNLDBData();
             List<InsertRecord> InsertListFromMES = GetNewMESDBData();
             InsertNLDBToMESDB(InsertListFromNL);
@@ -339,10 +368,25 @@ namespace MSSQL_Sync {
                         ir.TableName = keyArray[1];
                     }
                     // 因New Line数据库的数据格式均为数字，故需要过滤不能转换成数字的非法字符
-                    if (item.Value == "-" || item.Value == "X" || item.Value == "x") {
+                    if (cfg.Main.ResultColList.Contains(keyArray[2])) {
+                        // 处理结果数据字段，统一转换成0或1
+                        if (item.Value.Contains("-") || item.Value.Contains("X") || item.Value.Contains("x") || item.Value.Contains("N") || item.Value.Contains("n") || item.Value.Contains("F") || item.Value.Contains("f")) {
+                            // 不合格
+                            dicInsert.Add(keyArray[2], "0");
+                        } else if (item.Value.Contains("O") || item.Value.Contains("o") || item.Value.Contains("P") || item.Value.Contains("p")) {
+                            // 合格
+                            dicInsert.Add(keyArray[2], "1");
+                        } else {
+                            int.TryParse(item.Value, out int result);
+                            dicInsert.Add(keyArray[2], result.ToString());
+                        }
+                    } else if (cfg.Main.IntColList.Contains(keyArray[2])) {
+                        // 处理需要转换为int数据类型的字段值
+                        float.TryParse(item.Value, out float fl);
+                        dicInsert.Add(keyArray[2], Convert.ToInt32(fl + 0.01).ToString());
+                    } else if (item.Value == "-" || item.Value == "--" || item.Value == "---") {
+                        // 处理数据为“-”/“--”/“---”的字段，不能使用Contains("-")方法，因为会把datetime型数据也转换掉
                         dicInsert.Add(keyArray[2], "0");
-                    } else if (item.Value == "O" || item.Value == "o") {
-                        dicInsert.Add(keyArray[2], "1");
                     } else {
                         dicInsert.Add(keyArray[2], item.Value);
                     }
@@ -439,16 +483,32 @@ namespace MSSQL_Sync {
                     for (int j = 0; j < len; j++) {
                         int LastID = cfg.DBInfoList[i].LastIDList[j];
                         string TableName = cfg.DBInfoList[i].TableList[j];
-                        string[,] rs = db.GetNewRecords(TableName, "ID", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
+                        string[,] rs;
+                        // 对EmissionTotal、DieselTotal表的主键做特殊处理
+                        if (TableName == "EmissionTotal") {
+                            rs = db.GetNewRecords(TableName, "PK_DMS_AUTO_INDEX_EmissionTotal", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
+                        } else if (TableName == "DieselTotal") {
+                            rs = db.GetNewRecords(TableName, "PK_DMS_AUTO_INDEX_DieselTotal", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
+                        } else {
+                            rs = db.GetNewRecords(TableName, "ID", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
+                        }
                         if (rs != null) {
                             int rowNum = rs.GetLength(0);
                             string[] col = db.GetTableColumns(TableName, DBName);
                             if (rowNum > 0) {
                                 for (int k = 0; k < col.Length; k++) {
                                     if (cfg.Main.IDColList.Contains(col[k])) {
-                                        int.TryParse(rs[rowNum - 1, k], out int ID);
-                                        LastID = ID;
-                                        break;
+                                        if (TableName == "EmissionTotal") {
+                                            if (col[k] == "PK_DMS_AUTO_INDEX_EmissionTotal") {
+                                                int.TryParse(rs[rowNum - 1, k], out int ID);
+                                                LastID = ID;
+                                                break;
+                                            }
+                                        } else {
+                                            int.TryParse(rs[rowNum - 1, k], out int ID);
+                                            LastID = ID;
+                                            break;
+                                        }
                                     }
                                 }
                             }

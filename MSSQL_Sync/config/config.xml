@@ -4,6 +4,8 @@
     <SyncConfig>sync.xml</SyncConfig>
     <MESDBStartIndex>6</MESDBStartIndex>
     <IDColList>ID,SELFID,PK_DMS_AUTO_INDEX_EmissionTotal,PK_DMS_AUTO_INDEX_DieselTotal</IDColList>
+    <IntColList>BrakeForce_F,BrakeForce_FL,BrakeForce_FR,BrakeForce_R,BrakeForce_RL,BrakeForce_RR,Drag_FL,Drag_FR,Drag_RL,Drag_RR,Weight_FL,Weight_FR,Weight_RL,Weight_RR</IntColList>
+    <ResultColList>RESULT,Passed,EMISSION_TOTAL_VALUATION,HORN_,CH_RESULT,SPEEDMETER_,ZDT_RESULT,FAULTDES,Passed_CheckDTC,ABS_RESULT,ABSResult,FWP,BLOCK,STEER,WIPER,REARVIEWMIRROR,LIGHT,STARTER,PIPELINE,WHEELSTANDARD,WWSG,EMS,ENGINE,TNB,RGAFSG,TOTSPOR,TestResult</ResultColList>
   </Main>
   <DBInfo>
     <DB_0>
