@@ -48,6 +48,10 @@ namespace MSSQL_Sync {
             GenFileQueue();
         }
 
+        public void SetLogLevel(EnumLogLevel LogLevel) {
+            this.LogLevel = LogLevel;
+        }
+
         public void TraceFatal(string strLog) {
             if (strLog.Length == 0) {
                 return;

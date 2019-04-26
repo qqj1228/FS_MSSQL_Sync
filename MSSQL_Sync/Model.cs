@@ -137,10 +137,10 @@ namespace MSSQL_Sync {
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ERROR: " + e.Message);
-                //Console.WriteLine("ERROR: " + strSQL);
+                Console.WriteLine("ERROR: " + strSQL);
                 Console.ResetColor();
                 log.TraceError(e.Message);
-                //log.TraceError(strSQL);
+                log.TraceError(strSQL);
             }
             return count;
         }
@@ -174,12 +174,13 @@ namespace MSSQL_Sync {
             if (iRowNum * strID.Length == 0) {
                 return -1;
             }
+            string strSQL = "";
             string[] strColumns = GetTableColumns(strTableName, DBName);
             try {
                 using (SqlConnection sqlConn = new SqlConnection(connDic[DBName])) {
                     sqlConn.Open();
                     for (int i = 0; i < iRowNum; i++) {
-                        string strSQL = "update ";
+                        strSQL = "update ";
                         string strSet = "set ";
                         for (int j = 1; j < strColumns.Length; j++) {
                             strSet += strColumns[j] + " = '" + strValue[i, j - 1] + "', ";
@@ -195,8 +196,10 @@ namespace MSSQL_Sync {
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ERROR: " + e.Message);
+                Console.WriteLine("ERROR: " + strSQL);
                 Console.ResetColor();
                 log.TraceError(e.Message);
+                log.TraceError(strSQL);
             }
             return iRet;
         }
@@ -208,11 +211,12 @@ namespace MSSQL_Sync {
             if (iRowNum * iColNum == 0) {
                 return -1;
             }
+            string strSQL = "";
             try {
                 using (SqlConnection sqlConn = new SqlConnection(connDic[DBName])) {
                     sqlConn.Open();
                     for (int i = 0; i < iRowNum; i++) {
-                        string strSQL = "insert " + strTableName + " values (";
+                        strSQL = "insert " + strTableName + " values (";
                         for (int j = 0; j < iColNum; j++) {
                             strSQL += "'" + strValue[i, j] + "', ";
                         }
@@ -227,8 +231,10 @@ namespace MSSQL_Sync {
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ERROR: " + e.Message);
+                Console.WriteLine("ERROR: " + strSQL);
                 Console.ResetColor();
                 log.TraceError(e.Message);
+                log.TraceError(strSQL);
             }
             return iRet;
         }
@@ -239,10 +245,11 @@ namespace MSSQL_Sync {
             if (iColNum <= 0) {
                 return -1;
             }
+            string strSQL = "";
             try {
                 using (SqlConnection sqlConn = new SqlConnection(connDic[DBName])) {
                     sqlConn.Open();
-                    string strSQL = "insert " + strTableName + " (";
+                    strSQL = "insert " + strTableName + " (";
                     foreach (string key in dicValue.Keys) {
                         strSQL += key + ", ";
                     }
@@ -262,8 +269,10 @@ namespace MSSQL_Sync {
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ERROR: " + e.Message);
+                Console.WriteLine("ERROR: " + strSQL);
                 Console.ResetColor();
                 log.TraceError(e.Message);
+                log.TraceError(strSQL);
             }
             return iRet;
         }
@@ -274,10 +283,11 @@ namespace MSSQL_Sync {
             if (iColNum <= 0) {
                 return -1;
             }
+            string strSQL = "";
             try {
                 using (SqlConnection sqlConn = new SqlConnection(connDic[DBName])) {
                     sqlConn.Open();
-                    string strSQL = "update " + strTableName + " set ";
+                    strSQL = "update " + strTableName + " set ";
                     foreach (var item in dicValueSet) {
                         strSQL += item.Key + " = '" + item.Value + "', ";
                     }
@@ -291,8 +301,10 @@ namespace MSSQL_Sync {
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ERROR: " + e.Message);
+                Console.WriteLine("ERROR: " + strSQL);
                 Console.ResetColor();
                 log.TraceError(e.Message);
+                log.TraceError(strSQL);
             }
             return iRet;
         }
@@ -300,11 +312,12 @@ namespace MSSQL_Sync {
         public int DeleteDB(string strTableName, string[] strID, string DBName) {
             int iRet = 0;
             int length = strID.Length;
+            string strSQL = "";
             try {
                 using (SqlConnection sqlConn = new SqlConnection(connDic[DBName])) {
                     sqlConn.Open();
                     for (int i = 0; i < length; i++) {
-                        string strSQL = "delete from " + strTableName + " where ID = '" + strID[i] + "'";
+                        strSQL = "delete from " + strTableName + " where ID = '" + strID[i] + "'";
                         log.TraceInfo("SQL: " + strSQL);
                         SqlCommand sqlCmd = new SqlCommand(strSQL, sqlConn);
                         iRet += sqlCmd.ExecuteNonQuery();
@@ -314,8 +327,10 @@ namespace MSSQL_Sync {
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ERROR: " + e.Message);
+                Console.WriteLine("ERROR: " + strSQL);
                 Console.ResetColor();
                 log.TraceError(e.Message);
+                log.TraceError(strSQL);
             }
             return iRet;
         }
@@ -355,8 +370,10 @@ namespace MSSQL_Sync {
             } catch (Exception e) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("ERROR: " + e.Message);
+                Console.WriteLine("ERROR: " + strSQL);
                 Console.ResetColor();
                 log.TraceError(e.Message);
+                log.TraceError(strSQL);
             }
             return records;
         }

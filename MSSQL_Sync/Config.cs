@@ -8,7 +8,7 @@ namespace MSSQL_Sync {
     public class Config {
         public struct MainConfig {
             public int Interval { get; set; } // 单位秒
-            public string SyncConfig { get; set; }
+            public int LogLevel { get; set; }
             public int MESDBStartIndex { get; set; }
             public List<string> IDColList;
             public List<string> IntColList;
@@ -61,8 +61,9 @@ namespace MSSQL_Sync {
                             if (item.Name == "Interval") {
                                 int.TryParse(item.InnerText, out int result);
                                 Main.Interval = result;
-                            } else if (item.Name == "SyncConfig") {
-                                Main.SyncConfig = item.InnerText;
+                            } else if (item.Name == "LogLevel") {
+                                int.TryParse(item.InnerText, out int result);
+                                Main.LogLevel = result;
                             } else if (item.Name == "MESDBStartIndex") {
                                 int.TryParse(item.InnerText, out int result);
                                 Main.MESDBStartIndex = result;

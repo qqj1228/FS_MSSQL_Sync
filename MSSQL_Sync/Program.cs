@@ -41,6 +41,7 @@ namespace MSSQL_Sync {
             Console.WriteLine("Application started, input \"exit\" to close this application");
             log = new Logger("./log", EnumLogLevel.LogLevelAll, true, 100);
             cfg = new Config(log);
+            log.SetLogLevel((EnumLogLevel)cfg.Main.LogLevel);
             db = new Model(cfg, log);
             fileVer = new MainFileVersion();
             CanDO = true;
@@ -67,8 +68,8 @@ namespace MSSQL_Sync {
 
         static void SyncDB() {
             Console.WriteLine("{0} - [{1}] Start to sync database", DateTime.Now.ToLocalTime().ToString(), fileVer.AssemblyVersion.ToString());
-            log.TraceInfo("Start to sync database");
-            log.TraceInfo("Version: " + fileVer.AssemblyVersion.ToString());
+            log.TraceWarning("Start to sync database");
+            log.TraceWarning("Version: " + fileVer.AssemblyVersion.ToString());
             List<InsertRecord> InsertListFromNL = GetNewNLDBData();
             List<InsertRecord> InsertListFromMES = GetNewMESDBData();
             InsertNLDBToMESDB(InsertListFromNL);
@@ -266,6 +267,7 @@ namespace MSSQL_Sync {
             }
 
             Console.WriteLine("{0} - {1} records sync into MES database", DateTime.Now.ToLocalTime().ToString(), count);
+            log.TraceWarning(string.Format("{0} records sync into MES database", count));
             return count;
         }
 
@@ -466,6 +468,7 @@ namespace MSSQL_Sync {
             }
 
             Console.WriteLine("{0} - {1} records sync into New Line database", DateTime.Now.ToLocalTime().ToString(), count);
+            log.TraceWarning(string.Format("{0} records sync into New Line database", count));
             return count;
         }
 
