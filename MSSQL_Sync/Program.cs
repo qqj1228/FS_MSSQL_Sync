@@ -80,6 +80,21 @@ namespace MSSQL_Sync {
             UpdateLastID(LastIDContainList);
         }
 
+        static string[,] GetNewNLRecords(string TableName, string LastID, string DBName) {
+            string[,] rs;
+            // 对不同数据库不同表的主键做特殊处理
+            if (TableName == "EmissionTotal") {
+                rs = db.GetNewRecords(TableName, "PK_DMS_AUTO_INDEX_EmissionTotal", LastID, DBName);
+            } else if (TableName == "DieselTotal") {
+                rs = db.GetNewRecords(TableName, "PK_DMS_AUTO_INDEX_DieselTotal", LastID, DBName);
+            } else if (DBName == "EOL_FOTON_ABS" || DBName == "EOL_FOTON_LS" || DBName == "EOL_FOTON_HLA" || DBName == "EOL_FOTON_WA") {
+                rs = db.GetNewRecords(TableName, "SELFID", LastID, DBName);
+            } else {
+                rs = db.GetNewRecords(TableName, "ID", LastID, DBName);
+            }
+            return rs;
+        }
+
         /// <summary>
         /// 获取New Line数据库中的新数据，返回一个List<InsertRecord>结构包含有可以插入MES数据库中的数据
         /// </summary>
@@ -96,15 +111,7 @@ namespace MSSQL_Sync {
                     string DBName = cfg.DBInfoList[i].Name;
                     for (int j = 0; j < len; j++) {
                         string TableName = cfg.DBInfoList[i].TableList[j];
-                        string[,] rs;
-                        // 对EmissionTotal、DieselTotal表的主键做特殊处理
-                        if (TableName == "EmissionTotal") {
-                            rs = db.GetNewRecords(TableName, "PK_DMS_AUTO_INDEX_EmissionTotal", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
-                        } else if (TableName == "DieselTotal") {
-                            rs = db.GetNewRecords(TableName, "PK_DMS_AUTO_INDEX_DieselTotal", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
-                        } else {
-                            rs = db.GetNewRecords(TableName, "ID", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
-                        }
+                        string[,] rs = GetNewNLRecords(TableName, cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
                         if (rs != null) {
                             int rowNum = rs.GetLength(0);
                             string[] colNew = db.GetTableColumns(TableName, DBName);
@@ -237,7 +244,10 @@ namespace MSSQL_Sync {
                             }
                             if (item.Dic.Keys.Contains("TESTNUMBER")) {
                                 int.TryParse(item.Dic["TESTNUMBER"], out int result);
-                                TestNumber += result;
+                                // 取NL和MES两者之间的较大值
+                                if (TestNumber < result) {
+                                    TestNumber = result;
+                                }
                                 item.Dic["TESTNUMBER"] = TestNumber.ToString();
                             }
                             if (item.Dic.Keys.Contains("TESTTIME")) {
@@ -434,7 +444,7 @@ namespace MSSQL_Sync {
             foreach (InsertRecord item in InsertList) {
                 if (item.TableName != "" && item.DBName != "") {
                     if (item.TableName == "VehicleInfo") {
-                        // 对VehicleInfo表中的TestNumber字段做特殊处理
+                        // 对VehicleInfo表中的TestNumber、TestTime、LeaveFactoryTime三个字段做特殊处理
                         string[,] rs = db.GetRecords(item.TableName, "VIN", item.Dic["VIN"], item.DBName);
                         if (rs != null && rs.GetLength(0) > 0) {
                             int TestNumber = 0;
@@ -447,7 +457,10 @@ namespace MSSQL_Sync {
                             }
                             if (item.Dic.Keys.Contains("TestNumber")) {
                                 int.TryParse(item.Dic["TestNumber"], out int result);
-                                TestNumber += result;
+                                // 取NL和MES两者之间的较大值
+                                if (TestNumber < result) {
+                                    TestNumber = result;
+                                }
                                 item.Dic["TestNumber"] = TestNumber.ToString();
                             }
                             if (item.Dic.Keys.Contains("TestTime")) {
@@ -486,15 +499,7 @@ namespace MSSQL_Sync {
                     for (int j = 0; j < len; j++) {
                         int LastID = cfg.DBInfoList[i].LastIDList[j];
                         string TableName = cfg.DBInfoList[i].TableList[j];
-                        string[,] rs;
-                        // 对EmissionTotal、DieselTotal表的主键做特殊处理
-                        if (TableName == "EmissionTotal") {
-                            rs = db.GetNewRecords(TableName, "PK_DMS_AUTO_INDEX_EmissionTotal", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
-                        } else if (TableName == "DieselTotal") {
-                            rs = db.GetNewRecords(TableName, "PK_DMS_AUTO_INDEX_DieselTotal", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
-                        } else {
-                            rs = db.GetNewRecords(TableName, "ID", cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
-                        }
+                        string[,] rs = GetNewNLRecords(TableName, cfg.DBInfoList[i].LastIDList[j].ToString(), DBName);
                         if (rs != null) {
                             int rowNum = rs.GetLength(0);
                             string[] col = db.GetTableColumns(TableName, DBName);
@@ -502,7 +507,15 @@ namespace MSSQL_Sync {
                                 for (int k = 0; k < col.Length; k++) {
                                     if (cfg.Main.IDColList.Contains(col[k])) {
                                         if (TableName == "EmissionTotal") {
+                                            // EmissionTotal表同时含有ID和PK_DMS_AUTO_INDEX_EmissionTotal字段，需要特殊处理
                                             if (col[k] == "PK_DMS_AUTO_INDEX_EmissionTotal") {
+                                                int.TryParse(rs[rowNum - 1, k], out int ID);
+                                                LastID = ID;
+                                                break;
+                                            }
+                                        } else if (DBName == "EOL_FOTON_ABS" || DBName == "EOL_FOTON_LS" || DBName == "EOL_FOTON_HLA" || DBName == "EOL_FOTON_WA") {
+                                            // 这四个数据库里的表同时含有ID和SELFID字段，需要特殊处理
+                                            if (col[k] == "SELFID") {
                                                 int.TryParse(rs[rowNum - 1, k], out int ID);
                                                 LastID = ID;
                                                 break;
