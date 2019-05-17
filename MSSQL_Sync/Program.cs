@@ -95,6 +95,40 @@ namespace MSSQL_Sync {
             return rs;
         }
 
+        static bool GetABSResult(string VIN) {
+            string[,] rs;
+            int valvePassed = -1;
+            int sensorPassed = -1;
+            for (int i = 0; i < cfg.Main.MESDBStartIndex; i++) {
+                int len = cfg.DBInfoList[i].TableList.Count;
+                string DBName = cfg.DBInfoList[i].Name;
+                for (int j = 0; j < len; j++) {
+                    string TableName = cfg.DBInfoList[i].TableList[j];
+                    if (TableName == "ABS_Valve") {
+                        rs = db.GetRecordsOneCol(TableName, "Passed", "VIN", VIN, DBName);
+                        if (rs != null) {
+                            int rowNum = rs.GetLength(0);
+                            if (rowNum > 0) {
+                                int.TryParse(rs[rowNum - 1, 0], out int result);
+                                valvePassed = result;
+                            }
+                        }
+                    } else if (TableName == "Static_ABS") {
+                        rs = db.GetRecordsOneCol(TableName, "Passed", "VIN", VIN, DBName);
+                        if (rs != null) {
+                            int rowNum = rs.GetLength(0);
+                            if (rowNum > 0) {
+                                int.TryParse(rs[rowNum - 1, 0], out int result);
+                                sensorPassed = result;
+                            }
+                        }
+                    }
+                }
+            }
+            return valvePassed + sensorPassed >= 2;
+        }
+
+
         /// <summary>
         /// 获取New Line数据库中的新数据，返回一个List<InsertRecord>结构包含有可以插入MES数据库中的数据
         /// </summary>
@@ -115,15 +149,23 @@ namespace MSSQL_Sync {
                         if (rs != null) {
                             int rowNum = rs.GetLength(0);
                             string[] colNew = db.GetTableColumns(TableName, DBName);
-                            int IDIndex = 0;
                             if (rowNum > 0) {
                                 for (int n = 0; n < rowNum; n++) {
                                     Dictionary<string, string> dic = new Dictionary<string, string>();
                                     for (int k = 0; k < colNew.Length; k++) {
                                         if (!cfg.Main.IDColList.Contains(colNew[k])) {
                                             dic.Add(DBName + "." + TableName + "." + colNew[k], rs[n, k]);
-                                        } else {
-                                            IDIndex = k;
+                                            if (colNew[k] == "VIN") {
+                                                // 处理ABS结果，并写回VehicleInfo表里
+                                                if (TableName == "ABS_Valve" || TableName == "Static_ABS") {
+                                                    GetABSResult(rs[n, k]);
+                                                    KeyValuePair<string, string> pair = new KeyValuePair<string, string>("VIN", rs[n, k]);
+                                                    Dictionary<string, string> dicSet = new Dictionary<string, string> {
+                                                        { "ABSResult", GetABSResult(rs[n, k]) ? "O" : "X" }
+                                                    };
+                                                    db.UpdateRecord("VehicleInfo", pair, dicSet, "EOL_FOTON_INFO");
+                                                }
+                                            }
                                         }
                                     }
                                     NewList.Add(dic);
@@ -399,6 +441,13 @@ namespace MSSQL_Sync {
                     } else if (item.Value == "-" || item.Value == "--" || item.Value == "---") {
                         // 处理数据为“-”/“--”/“---”的字段，不能使用Contains("-")方法，因为会把datetime型数据也转换掉
                         dicInsert.Add(keyArray[2], "0");
+                    } else if (keyArray[2] == "VIN") {
+                        // 处理非法VIN号
+                        if (item.Value.Length > 17) {
+                            dicInsert.Add(keyArray[2], item.Value.Substring(0, 17));
+                        } else {
+                            dicInsert.Add(keyArray[2], item.Value);
+                        }
                     } else {
                         dicInsert.Add(keyArray[2], item.Value);
                     }
